@@ -15,17 +15,20 @@ function App() {
   const [src, setSrc] = useState("");
   const [data, setData] = useState([]);
 
-  const onSelectFile = (e: any) => {
+  const onSelectFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) {
+      return;
+    }
     const reader = new FileReader();
     const file = e.target.files[0];
 
-    reader.onload = function (upload: any) {
-      setSrc(upload.target.result as string);
+    reader.onload = function (upload: ProgressEvent<FileReader>) {
+      setSrc(upload?.target?.result as string);
     };
     reader.readAsDataURL(file);
   };
 
-  const onRunOCR = async (e: any) => {
+  const onRunOCR = async () => {
     const client = new TextractClient({
       region: "YOUR_AWS_REGION",
       credentials: {
@@ -46,10 +49,11 @@ function App() {
 
     const command = new DetectDocumentTextCommand(params);
     try {
-      const data: any = await client.send(command);
-      console.log("data", data);
-      setData(data.Blocks);
+      const data = await client.send(command);
       // process data
+      if (data?.Blocks) {
+        setData(data.Blocks as []);
+      }
     } catch (error) {
       console.log("err", error);
       // error handling
